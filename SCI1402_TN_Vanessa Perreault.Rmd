@@ -1,0 +1,142 @@
+---
+title: "Projet final"
+subtitle: "SCI 1402: Projet en science des données"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<br> \#### Nom, prénom: Perreault, Vanessa \#### No étudiant: 25135249
+
+------------------------------------------------------------------------
+
+## Partie 1 : Traitement des données
+
+#### Importations des données
+
+```{r}
+performance<-read.csv("student_performance_dataset.csv")
+head(performance)
+
+```
+
+<br> <br>
+
+##### Nettoyage des données
+
+```{r}
+##Je commence par retirer les colonnes qui ne seront pas utilisés pour le projet
+
+performance<-subset(performance,select = -c(gender,parental_education))
+
+##Je m'assure ensuite qu'aucune ligne ne contient de données vides
+performance<-na.omit(performance)
+
+##Je transforme ensuite les données qualitatives en données numériques
+performance[,c("internet_access","extracurricular_activities","part_time_job")]<-as.numeric(performance[,c("internet_access","extracurricular_activities","part_time_job")]=="Yes")
+
+```
+
+<br> <br> <br>
+
+## Partie 2 : Exploration des données
+
+#### Corrélation entre les données
+
+```{r}
+donnees<-performance[,c("study_time_hours","attendance_percent","sleep_hours","internet_access","extracurricular_activities","part_time_job","previous_grade","final_exam_score")]
+mat_cor<-cor(donnees,use="complete.obs")
+print(mat_cor)
+
+```
+
+<br> <br>
+
+Il est possible de voir que :
+
+- Le temps d'étude est la variable ayant la plus forte corrélation avec le résultat final (\>0.5)
+- Le pourcentage de présence au cours et les résultats précédents ont une faible corrélation (entre 0.2 et 0.5)
+- Pour les autres facteurs, ils ont une corrélations très faibles ou nulle (entre 0.2 et -0.2)
+
+<br> <br> <br>
+
+## Partie 3 : Visualisation des données
+
+Cette section sert à visualiser les différentes corrélations.
+
+#### Effet du temps d'étude sur la performance finale
+
+```{r}
+
+boxplot(performance$study_time_hours~performance$final_grade,xlab = "Final Grade",ylab = "Study time hours",main="Impact of study time")
+
+
+```
+
+#### Effet du temps de sommeil
+
+```{r}
+
+boxplot(performance$sleep_hours~performance$final_grade,xlab = "Final Grade",ylab = "Sleep hours",main="Impact of sleep hours")
+
+```
+
+#### Effet du pourcentage de présence
+
+```{r}
+
+boxplot(performance$attendance_percent~performance$final_grade,xlab = "Final Grade",ylab = "Attendance percent",main="Impact of attendance percent")
+
+```
+
+#### Effet des notes précédentes
+
+```{r}
+
+boxplot(performance$previous_grade~performance$final_grade,xlab = "Final Grade",ylab = "Previous grade",main="Impact of previous grade")
+
+```
+
+#### Effet de l'emploi à temps partiel
+
+```{r}
+
+boxplot(performance$final_exam_score~performance$part_time_job,xlab="Part Time Job",ylab = "Final Exam Score",main="Impact of part time job",names=c("No","Yes"))
+
+```
+
+#### Effet de l'activité extra-curriculaire
+
+```{r}
+
+boxplot(performance$final_exam_score~performance$extracurricular_activities,xlab="extracurricular activities",ylab = "Final Exam Score",main="Impact of extracurricular activities",names=c("No","Yes"))
+
+```
+
+#### Effet de l'accès à Internet
+
+```{r}
+
+boxplot(performance$final_exam_score~performance$internet_access,xlab="internet access",ylab = "Final Exam Score",main="Impact of internet access",names=c("No","Yes"))
+
+```
+
+<br> <br> <br>
+
+## Partie 4 : Entraînement d'un modèle
+
+#### Utilisation de la validation par K-fold pour prédire un modèle
+
+```{r}
+library(caret)
+train_control<-trainControl(method = "repeatedcv",number = 10,repeats = 3,savePredictions = "final")
+model<-train(final_grade~.,data=performance,trControl=train_control,method="rf")
+confusionMatrix(model)
+
+```
+
+Le modèle présente une exactitude globale d'environ 99%, ce qui signifie qu'il est très rare qu'il commette une erreur.
+
+<br> <br>
